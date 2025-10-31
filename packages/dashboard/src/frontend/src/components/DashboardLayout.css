@@ -1,0 +1,99 @@
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo-icon {
+  font-size: 1.75rem;
+}
+
+.header-nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.header-nav a {
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.header-nav a:hover {
+  color: var(--primary-color);
+  background: var(--bg-secondary);
+}
+
+.header-nav a.active {
+  color: var(--primary-color);
+  background: var(--bg-secondary);
+}
+
+.dashboard-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.dashboard-sidebar {
+  width: 280px;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-color);
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.sidebar-nav h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.deployment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.text-muted {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+}
+

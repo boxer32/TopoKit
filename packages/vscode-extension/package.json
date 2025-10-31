@@ -1,0 +1,131 @@
+{
+  "name": "topokit-vscode",
+  "displayName": "TopoKit",
+  "description": "TopoKit VS Code extension for topology-first contract system development",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Visualization"
+  ],
+  "activationEvents": [
+    "onLanguage:yaml",
+    "onLanguage:json",
+    "workspaceContains:**/topology/**"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "topokit.packExplorer.refresh",
+        "title": "Refresh Pack Explorer",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "topokit.validateContract",
+        "title": "Validate Contract",
+        "icon": "$(check)"
+      },
+      {
+        "command": "topokit.runTests",
+        "title": "Run TopoKit Tests",
+        "icon": "$(play)"
+      },
+      {
+        "command": "topokit.showGraph",
+        "title": "Show Graph View",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "topokit.debugConsole",
+        "title": "Open Debug Console",
+        "icon": "$(debug)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "topokitPackExplorer",
+          "name": "TopoKit Packs",
+          "when": "workspaceHasTopologyFolder"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "topokit",
+          "title": "TopoKit",
+          "icon": "$(topokit-icon)"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "topology",
+        "aliases": ["TopoKit", "topology"],
+        "extensions": [".topology.yaml", ".topology.yml"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "configuration": {
+      "title": "TopoKit",
+      "properties": {
+        "topokit.lintOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable lint-on-save validation"
+        },
+        "topokit.autoValidate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically validate topology files"
+        },
+        "topokit.graphRefreshRate": {
+          "type": "number",
+          "default": 1000,
+          "description": "Graph view refresh rate in milliseconds"
+        }
+      }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "topokit.packExplorer.refresh",
+          "when": "view == topokitPackExplorer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "topokit.validateContract",
+          "when": "view == topokitPackExplorer && viewItem == contract",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "yaml": "^2.3.0",
+    "jsonc-parser": "^3.2.0"
+  }
+}
+

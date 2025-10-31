@@ -1,0 +1,213 @@
+# TopoKit LlamaIndex Integration Template
+# This template demonstrates how to integrate TopoKit with LlamaIndex
+# for vector store-based RAG systems
+
+name: "llamaindex-integration"
+description: "TopoKit integration with LlamaIndex for vector store RAG workflows"
+version: "1.0.0"
+
+nodes:
+  - id: "LlamaIndex.QueryEngine"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["llamaindex_query"]
+      context_required: true
+    execution_profile:
+      temperature: 0.2
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 2000
+      deterministic_reranker: true
+    metadata:
+      adapter: "llamaindex"
+      vector_store_type: "simple"
+      similarity_top_k: 5
+      llm_type: "openai"
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 10%"
+      latency_budget: "≤ 3000ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 95%"
+      cost_budget: "≤ 200 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 5000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 3600
+      key_template: "query_hash+index_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+
+  - id: "Document.Indexer"
+    kind: "data"
+    version: "1.0.0"
+    scope:
+      contracts: ["index_documents"]
+      context_required: false
+    execution_profile:
+      temperature: 0.0
+      top_p: 1.0
+      seed: "stable"
+      max_tokens: 5000
+      deterministic_reranker: false
+    metadata:
+      adapter: "llamaindex"
+      index_mode: "incremental"
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 5%"
+      latency_budget: "≤ 5000ms"
+      context_precision: "≥ 0.95"
+      consistency_rate: "≥ 98%"
+      cost_budget: "≤ 100 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 10000
+      fallback_node: null
+    caching:
+      enabled: false
+      ttl_seconds: 0
+      key_template: ""
+    provenance:
+      track_prompt_hash: false
+      track_model_params: false
+      track_retrieval_sources: true
+
+edges:
+  - id: "Document.Indexer_to_LlamaIndex.QueryEngine"
+    from: "Document.Indexer"
+    to: "LlamaIndex.QueryEngine"
+    version: "1.0.0"
+    contracts: ["index_documents", "llamaindex_query"]
+    allow: true
+    timeout_ms: 5000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 3000
+
+contracts:
+  - name: "index_documents"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        documents:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              text: { type: "string" }
+              metadata: { type: "object" }
+        index_path:
+          type: "string"
+          description: "Path to store/load index"
+      required: ["documents"]
+    output_schema:
+      type: "object"
+      properties:
+        indexed_count: { type: "number" }
+        index_path: { type: "string" }
+        metadata:
+          type: "object"
+          properties:
+            total_documents: { type: "number" }
+            index_size: { type: "number" }
+      required: ["indexed_count", "index_path"]
+
+  - name: "llamaindex_query"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        query:
+          type: "string"
+          description: "Query to execute against LlamaIndex"
+        query_mode:
+          type: "string"
+          enum: ["default", "retrieve", "summarize"]
+          default: "default"
+      required: ["query"]
+    output_schema:
+      type: "object"
+      properties:
+        response:
+          type: "string"
+          description: "Query response from LlamaIndex"
+        source_nodes:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              node_id: { type: "string" }
+              score: { type: "number" }
+              text: { type: "string" }
+        metadata:
+          type: "object"
+          properties:
+            num_source_nodes: { type: "number" }
+            query_mode: { type: "string" }
+            tokens_used: { type: "number" }
+      required: ["response", "source_nodes"]
+
+guardrails:
+  determinism:
+    temperature: 0.2
+    seed: "session-hash"
+    canonical_sort: true
+  confidence:
+    threshold: 0.7
+    min_confidence: 0.5
+  fallback:
+    enabled: true
+    policy: "rule_first"
+  ranking:
+    enabled: true
+    reranker: "deterministic"
+  context_alignment:
+    enabled: true
+    threshold: 0.8
+  human_gates:
+    enabled: false
+    approval_required: false
+  circuit_breakers:
+    enabled: true
+    failure_threshold: 3
+  policy_engine:
+    enabled: true
+    environment: "development"
+  observability:
+    enabled: true
+    logging_level: "info"
+    metrics_enabled: true
+
+context_schema:
+  type: "object"
+  properties:
+    session_id:
+      type: "string"
+      description: "Unique session identifier"
+    query:
+      type: "string"
+      description: "Original user query"
+    indexed_documents:
+      type: "array"
+      items:
+        type: "object"
+        properties:
+          text: { type: "string" }
+          metadata: { type: "object" }
+    query_response:
+      type: "object"
+      properties:
+        response: { type: "string" }
+        source_nodes: { type: "array" }
+        metadata: { type: "object" }
+  required: ["session_id", "query"]
+

@@ -1,0 +1,40 @@
+{
+  "name": "retrieve",
+  "input": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string"
+      },
+      "limit": {
+        "type": "number",
+        "default": 10
+      }
+    },
+    "required": [
+      "query"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "documents": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            },
+            "score": {
+              "type": "number"
+            },
+            "metadata": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    }
+  }
+}

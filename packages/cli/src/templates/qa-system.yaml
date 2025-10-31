@@ -1,0 +1,337 @@
+# TopoKit QA System Template
+# This template creates a question-answering system with document processing,
+# question analysis, and answer generation
+
+name: "qa-system"
+description: "Question-answering system with document processing and answer generation"
+version: "1.0.0"
+
+nodes:
+  - id: "Document.Processor"
+    kind: "data"
+    version: "1.0.0"
+    scope:
+      contracts: ["process_document"]
+      context_required: true
+    execution_profile:
+      temperature: 0.0
+      top_p: 0.8
+      seed: "stable"
+      max_tokens: 4000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 5%"
+      latency_budget: "≤ 2000ms"
+      context_precision: "≥ 0.95"
+      consistency_rate: "≥ 98%"
+      cost_budget: "≤ 200 tokens/run"
+    circuit_breaker:
+      failure_threshold: 2
+      timeout_ms: 3000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 7200
+      key_template: "doc_hash+processor_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+
+  - id: "Question.Analyzer"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["analyze_question"]
+      context_required: true
+    execution_profile:
+      temperature: 0.1
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 1000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 8%"
+      latency_budget: "≤ 1500ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 95%"
+      cost_budget: "≤ 150 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 2000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 3600
+      key_template: "question_hash+analyzer_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: false
+
+  - id: "Answer.Generator"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["generate_answer"]
+      context_required: true
+    execution_profile:
+      temperature: 0.3
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 2000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 10%"
+      latency_budget: "≤ 3000ms"
+      context_precision: "≥ 0.85"
+      consistency_rate: "≥ 90%"
+      cost_budget: "≤ 300 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 4000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 1800
+      key_template: "question_hash+context_hash+generator_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+
+edges:
+  - id: "Document.Processor_to_Question.Analyzer"
+    from: "Document.Processor"
+    to: "Question.Analyzer"
+    version: "1.0.0"
+    contracts: ["process_document", "analyze_question"]
+    allow: true
+    timeout_ms: 3000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 2
+      timeout_ms: 2000
+
+  - id: "Question.Analyzer_to_Answer.Generator"
+    from: "Question.Analyzer"
+    to: "Answer.Generator"
+    version: "1.0.0"
+    contracts: ["analyze_question", "generate_answer"]
+    allow: true
+    timeout_ms: 4000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 3000
+
+contracts:
+  - name: "process_document"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        document:
+          type: "string"
+          description: "Document content to process"
+        document_type:
+          type: "string"
+          enum: ["text", "pdf", "html", "markdown"]
+          description: "Type of document"
+        metadata:
+          type: "object"
+          description: "Document metadata"
+      required: ["document", "document_type"]
+    output_schema:
+      type: "object"
+      properties:
+        processed_content:
+          type: "string"
+          description: "Processed document content"
+        chunks:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              text: { type: "string" }
+              start_pos: { type: "number" }
+              end_pos: { type: "number" }
+              metadata: { type: "object" }
+        summary:
+          type: "string"
+          description: "Document summary"
+        entities:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              text: { type: "string" }
+              type: { type: "string" }
+              confidence: { type: "number" }
+      required: ["processed_content", "chunks"]
+
+  - name: "analyze_question"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        question:
+          type: "string"
+          description: "Question to analyze"
+        context:
+          type: "object"
+          properties:
+            processed_content: { type: "string" }
+            chunks: { type: "array" }
+            summary: { type: "string" }
+            entities: { type: "array" }
+        question_type:
+          type: "string"
+          enum: ["factual", "analytical", "comparative", "explanatory"]
+          description: "Type of question"
+      required: ["question", "context"]
+    output_schema:
+      type: "object"
+      properties:
+        analysis:
+          type: "object"
+          properties:
+            intent: { type: "string" }
+            complexity: { type: "string", enum: ["low", "medium", "high"] }
+            required_info: { type: "array", items: { type: "string" } }
+            keywords: { type: "array", items: { type: "string" } }
+        relevant_chunks:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              chunk_id: { type: "string" }
+              relevance_score: { type: "number" }
+              text: { type: "string" }
+        search_strategy:
+          type: "string"
+          enum: ["exact_match", "semantic_search", "hybrid"]
+      required: ["analysis", "relevant_chunks"]
+
+  - name: "generate_answer"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        question:
+          type: "string"
+          description: "Original question"
+        analysis:
+          type: "object"
+          description: "Question analysis results"
+        relevant_chunks:
+          type: "array"
+          description: "Relevant document chunks"
+        answer_style:
+          type: "string"
+          enum: ["concise", "detailed", "technical"]
+          default: "detailed"
+      required: ["question", "analysis", "relevant_chunks"]
+    output_schema:
+      type: "object"
+      properties:
+        answer:
+          type: "string"
+          description: "Generated answer"
+        confidence:
+          type: "number"
+          minimum: 0
+          maximum: 1
+          description: "Answer confidence score"
+        sources:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              chunk_id: { type: "string" }
+              text: { type: "string" }
+              relevance_score: { type: "number" }
+        reasoning:
+          type: "string"
+          description: "Answer generation reasoning"
+        follow_up_questions:
+          type: "array"
+          items:
+            type: "string"
+          description: "Suggested follow-up questions"
+      required: ["answer", "confidence", "sources"]
+
+guardrails:
+  determinism:
+    temperature: 0.2
+    seed: "session-hash"
+    canonical_sort: true
+  confidence:
+    threshold: 0.8
+    min_confidence: 0.6
+  fallback:
+    enabled: true
+    policy: "rule_first"
+  ranking:
+    enabled: true
+    reranker: "deterministic"
+  context_alignment:
+    enabled: true
+    threshold: 0.85
+  human_gates:
+    enabled: false
+    approval_required: false
+  circuit_breakers:
+    enabled: true
+    failure_threshold: 3
+  policy_engine:
+    enabled: true
+    environment: "development"
+  observability:
+    enabled: true
+    logging_level: "info"
+    metrics_enabled: true
+
+context_schema:
+  type: "object"
+  properties:
+    session_id:
+      type: "string"
+      description: "Unique session identifier"
+    user_id:
+      type: "string"
+      description: "User identifier"
+    question:
+      type: "string"
+      description: "Original user question"
+    document:
+      type: "object"
+      properties:
+        content: { type: "string" }
+        type: { type: "string" }
+        metadata: { type: "object" }
+    processed_document:
+      type: "object"
+      properties:
+        processed_content: { type: "string" }
+        chunks: { type: "array" }
+        summary: { type: "string" }
+        entities: { type: "array" }
+    question_analysis:
+      type: "object"
+      properties:
+        intent: { type: "string" }
+        complexity: { type: "string" }
+        required_info: { type: "array" }
+        keywords: { type: "array" }
+    generated_answer:
+      type: "object"
+      properties:
+        answer: { type: "string" }
+        confidence: { type: "number" }
+        sources: { type: "array" }
+        reasoning: { type: "string" }
+  required: ["session_id", "question"]

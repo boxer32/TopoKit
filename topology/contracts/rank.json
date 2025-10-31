@@ -1,0 +1,43 @@
+{
+  "input": {
+    "type": "object",
+    "required": ["query", "candidates"],
+    "properties": {
+      "query": {"type": "string"},
+      "candidates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string"},
+            "content": {"type": "string"},
+            "metadata": {"type": "object"}
+          }
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["ranked_candidates", "scores"],
+    "properties": {
+      "ranked_candidates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string"},
+            "content": {"type": "string"},
+            "metadata": {"type": "object"},
+            "score": {"type": "number"}
+          }
+        }
+      },
+      "scores": {
+        "type": "array",
+        "items": {"type": "number"}
+      }
+    }
+  },
+  "description": "Ranking contract for candidate scoring"
+}

@@ -1,0 +1,240 @@
+.collaboration-panel {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.collaboration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.collaboration-header h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.toggle-btn {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.toggle-btn.active {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-color: var(--primary-color);
+}
+
+.collaborators-section,
+.annotations-section {
+  margin-bottom: 1.5rem;
+}
+
+.collaborators-section h5,
+.annotations-section h5 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.collaborators-list,
+.annotations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.collaborator-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 0.375rem;
+}
+
+.collaborator-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.collaborator-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.collaborator-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.collaborator-view {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+
+.status-indicator.active {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-indicator.viewing {
+  background: #3b82f6;
+}
+
+.status-indicator.idle {
+  background: #64748b;
+}
+
+.annotation-item {
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border-left: 3px solid var(--primary-color);
+  border-radius: 0.375rem;
+}
+
+.annotation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.annotation-user {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.annotation-time {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.resolve-btn {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.resolve-btn:hover {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+}
+
+.annotation-content {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.annotation-target {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.annotation-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.annotation-form input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.annotation-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.annotation-form button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: var(--primary-color);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.annotation-form button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.annotation-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.session-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.user-color-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+}
+

@@ -1,0 +1,182 @@
+.cost-tracking {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.cost-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.cost-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.budget-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.budget-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.budget-controls input {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  width: 80px;
+}
+
+.budget-controls input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.cost-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.cost-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  transition: all 0.2s;
+}
+
+.cost-card.within-budget {
+  border-color: #10b981;
+}
+
+.cost-card.near-budget {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.cost-card.over-budget {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.cost-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.budget-status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.budget-status.ok {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.budget-status.warning {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.budget-status.over {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.cost-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.cost-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.cost-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.chart-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.chart-section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.budget-alert,
+.budget-warning {
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
+}
+
+.budget-alert {
+  background: #fef2f2;
+  border: 2px solid #ef4444;
+  color: #991b1b;
+}
+
+.budget-warning {
+  background: #fffbeb;
+  border: 2px solid #f59e0b;
+  color: #92400e;
+}
+
+.budget-alert strong,
+.budget-warning strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+

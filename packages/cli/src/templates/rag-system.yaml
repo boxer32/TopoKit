@@ -1,0 +1,225 @@
+# TopoKit RAG System Template
+# This template creates a basic RAG (Retrieval-Augmented Generation) system
+# with data retrieval and AI answer generation nodes
+
+name: "rag-system"
+description: "Basic RAG system with data retrieval and AI answer generation"
+version: "1.0.0"
+
+nodes:
+  - id: "Data.Retrieval"
+    kind: "data"
+    version: "1.0.0"
+    scope:
+      contracts: ["retrieve"]
+      retrieval_scope: ["vec:documents", "vec:knowledge"]
+      context_required: true
+    execution_profile:
+      temperature: 0.1
+      top_p: 0.8
+      seed: "stable"
+      max_tokens: 2000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 10%"
+      latency_budget: "≤ 1000ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 95%"
+      cost_budget: "≤ 100 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 2000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 3600
+      key_template: "prompt_hash+ctx_hash+model+profile"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+
+  - id: "AI.Answer"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["answer"]
+      context_required: true
+    execution_profile:
+      temperature: 0.2
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 1000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 10%"
+      latency_budget: "≤ 1000ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 95%"
+      cost_budget: "≤ 100 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 2000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 3600
+      key_template: "prompt_hash+ctx_hash+model+profile"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+
+edges:
+  - id: "Data.Retrieval_to_AI.Answer"
+    from: "Data.Retrieval"
+    to: "AI.Answer"
+    version: "1.0.0"
+    contracts: ["retrieve", "answer"]
+    allow: true
+    timeout_ms: 5000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 2000
+
+contracts:
+  - name: "retrieve"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        query:
+          type: "string"
+          description: "Search query for document retrieval"
+        limit:
+          type: "number"
+          default: 10
+          description: "Maximum number of documents to retrieve"
+        filters:
+          type: "object"
+          description: "Optional filters for document retrieval"
+      required: ["query"]
+    output_schema:
+      type: "object"
+      properties:
+        documents:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              content:
+                type: "string"
+                description: "Document content"
+              score:
+                type: "number"
+                minimum: 0
+                maximum: 1
+                description: "Relevance score"
+              metadata:
+                type: "object"
+                description: "Document metadata"
+        total_found:
+          type: "number"
+          description: "Total number of documents found"
+      required: ["documents"]
+
+  - name: "answer"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        question:
+          type: "string"
+          description: "Question to answer"
+        context:
+          type: "array"
+          items:
+            type: "string"
+          description: "Context documents for answering"
+        max_length:
+          type: "number"
+          default: 500
+          description: "Maximum answer length"
+      required: ["question", "context"]
+    output_schema:
+      type: "object"
+      properties:
+        answer:
+          type: "string"
+          description: "Generated answer"
+        confidence:
+          type: "number"
+          minimum: 0
+          maximum: 1
+          description: "Confidence score"
+        sources:
+          type: "array"
+          items:
+            type: "string"
+          description: "Source document references"
+        reasoning:
+          type: "string"
+          description: "Reasoning process"
+      required: ["answer", "confidence"]
+
+guardrails:
+  determinism:
+    temperature: 0.2
+    seed: "session-hash"
+    canonical_sort: true
+  confidence:
+    threshold: 0.7
+    min_confidence: 0.5
+  fallback:
+    enabled: true
+    policy: "rule_first"
+  ranking:
+    enabled: true
+    reranker: "deterministic"
+  context_alignment:
+    enabled: true
+    threshold: 0.8
+  human_gates:
+    enabled: false
+    approval_required: false
+  circuit_breakers:
+    enabled: true
+    failure_threshold: 3
+  policy_engine:
+    enabled: true
+    environment: "development"
+  observability:
+    enabled: true
+    logging_level: "info"
+    metrics_enabled: true
+
+context_schema:
+  type: "object"
+  properties:
+    session_id:
+      type: "string"
+      description: "Unique session identifier"
+    user_id:
+      type: "string"
+      description: "User identifier"
+    query:
+      type: "string"
+      description: "Original user query"
+    retrieved_documents:
+      type: "array"
+      items:
+        type: "object"
+        properties:
+          content: { type: "string" }
+          score: { type: "number" }
+          metadata: { type: "object" }
+    generated_answer:
+      type: "object"
+      properties:
+        answer: { type: "string" }
+        confidence: { type: "number" }
+        sources: { type: "array", items: { type: "string" } }
+  required: ["session_id", "query"]

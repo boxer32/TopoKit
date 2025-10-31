@@ -1,0 +1,527 @@
+# TopoKit Multi-Agent System Template
+# This template creates a multi-agent system with specialized agents for different tasks
+# including research, analysis, synthesis, and validation
+
+name: "multi-agent"
+description: "Multi-agent system with specialized agents for research, analysis, synthesis, and validation"
+version: "1.0.0"
+
+nodes:
+  - id: "Research.Agent"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["research_task"]
+      context_required: true
+    execution_profile:
+      temperature: 0.3
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 3000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 15%"
+      latency_budget: "≤ 5000ms"
+      context_precision: "≥ 0.8"
+      consistency_rate: "≥ 90%"
+      cost_budget: "≤ 500 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 6000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 1800
+      key_template: "task_hash+research_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+
+  - id: "Analysis.Agent"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["analyze_data"]
+      context_required: true
+    execution_profile:
+      temperature: 0.2
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 2500
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 12%"
+      latency_budget: "≤ 4000ms"
+      context_precision: "≥ 0.85"
+      consistency_rate: "≥ 92%"
+      cost_budget: "≤ 400 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 5000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 2400
+      key_template: "data_hash+analysis_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+
+  - id: "Synthesis.Agent"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["synthesize_findings"]
+      context_required: true
+    execution_profile:
+      temperature: 0.4
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 4000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 18%"
+      latency_budget: "≤ 6000ms"
+      context_precision: "≥ 0.8"
+      consistency_rate: "≥ 88%"
+      cost_budget: "≤ 600 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 7000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 1200
+      key_template: "findings_hash+synthesis_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+
+  - id: "Validation.Agent"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["validate_output"]
+      context_required: true
+    execution_profile:
+      temperature: 0.1
+      top_p: 0.8
+      seed: "stable"
+      max_tokens: 2000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 8%"
+      latency_budget: "≤ 3000ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 95%"
+      cost_budget: "≤ 300 tokens/run"
+    circuit_breaker:
+      failure_threshold: 2
+      timeout_ms: 4000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 3600
+      key_template: "output_hash+validation_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: false
+
+  - id: "Coordinator.Agent"
+    kind: "ops"
+    version: "1.0.0"
+    scope:
+      contracts: ["coordinate_agents"]
+      context_required: true
+    execution_profile:
+      temperature: 0.1
+      top_p: 0.8
+      seed: "stable"
+      max_tokens: 1500
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 5%"
+      latency_budget: "≤ 2000ms"
+      context_precision: "≥ 0.95"
+      consistency_rate: "≥ 98%"
+      cost_budget: "≤ 200 tokens/run"
+    circuit_breaker:
+      failure_threshold: 2
+      timeout_ms: 3000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 1800
+      key_template: "task_hash+coordinator_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: false
+
+edges:
+  - id: "Coordinator.Agent_to_Research.Agent"
+    from: "Coordinator.Agent"
+    to: "Research.Agent"
+    version: "1.0.0"
+    contracts: ["coordinate_agents", "research_task"]
+    allow: true
+    timeout_ms: 6000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 5000
+
+  - id: "Research.Agent_to_Analysis.Agent"
+    from: "Research.Agent"
+    to: "Analysis.Agent"
+    version: "1.0.0"
+    contracts: ["research_task", "analyze_data"]
+    allow: true
+    timeout_ms: 5000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 4000
+
+  - id: "Analysis.Agent_to_Synthesis.Agent"
+    from: "Analysis.Agent"
+    to: "Synthesis.Agent"
+    version: "1.0.0"
+    contracts: ["analyze_data", "synthesize_findings"]
+    allow: true
+    timeout_ms: 7000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 6000
+
+  - id: "Synthesis.Agent_to_Validation.Agent"
+    from: "Synthesis.Agent"
+    to: "Validation.Agent"
+    version: "1.0.0"
+    contracts: ["synthesize_findings", "validate_output"]
+    allow: true
+    timeout_ms: 4000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 2
+      timeout_ms: 3000
+
+  - id: "Validation.Agent_to_Coordinator.Agent"
+    from: "Validation.Agent"
+    to: "Coordinator.Agent"
+    version: "1.0.0"
+    contracts: ["validate_output", "coordinate_agents"]
+    allow: true
+    timeout_ms: 3000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 2
+      timeout_ms: 2000
+
+contracts:
+  - name: "research_task"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        task:
+          type: "string"
+          description: "Research task description"
+        scope:
+          type: "object"
+          properties:
+            topics: { type: "array", items: { type: "string" } }
+            depth: { type: "string", enum: ["shallow", "medium", "deep"] }
+            sources: { type: "array", items: { type: "string" } }
+        constraints:
+          type: "object"
+          properties:
+            max_sources: { type: "number" }
+            time_limit: { type: "number" }
+            quality_threshold: { type: "number" }
+      required: ["task", "scope"]
+    output_schema:
+      type: "object"
+      properties:
+        findings:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              source: { type: "string" }
+              content: { type: "string" }
+              relevance_score: { type: "number" }
+              metadata: { type: "object" }
+        summary:
+          type: "string"
+          description: "Research summary"
+        confidence:
+          type: "number"
+          minimum: 0
+          maximum: 1
+        gaps:
+          type: "array"
+          items: { type: "string" }
+          description: "Identified knowledge gaps"
+      required: ["findings", "summary", "confidence"]
+
+  - name: "analyze_data"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        data:
+          type: "object"
+          properties:
+            findings: { type: "array" }
+            summary: { type: "string" }
+            confidence: { type: "number" }
+        analysis_type:
+          type: "string"
+          enum: ["trend", "pattern", "correlation", "causation"]
+        focus_areas:
+          type: "array"
+          items: { type: "string" }
+      required: ["data", "analysis_type"]
+    output_schema:
+      type: "object"
+      properties:
+        analysis:
+          type: "object"
+          properties:
+            key_insights: { type: "array", items: { type: "string" } }
+            patterns: { type: "array", items: { type: "string" } }
+            trends: { type: "array", items: { type: "string" } }
+            anomalies: { type: "array", items: { type: "string" } }
+        metrics:
+          type: "object"
+          properties:
+            data_quality: { type: "number" }
+            completeness: { type: "number" }
+            reliability: { type: "number" }
+        recommendations:
+          type: "array"
+          items: { type: "string" }
+      required: ["analysis", "metrics"]
+
+  - name: "synthesize_findings"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        research_data:
+          type: "object"
+          properties:
+            findings: { type: "array" }
+            summary: { type: "string" }
+            confidence: { type: "number" }
+        analysis_data:
+          type: "object"
+          properties:
+            analysis: { type: "object" }
+            metrics: { type: "object" }
+            recommendations: { type: "array" }
+        synthesis_goal:
+          type: "string"
+          description: "Goal for synthesis"
+      required: ["research_data", "analysis_data"]
+    output_schema:
+      type: "object"
+      properties:
+        synthesis:
+          type: "object"
+          properties:
+            narrative: { type: "string" }
+            key_points: { type: "array", items: { type: "string" } }
+            conclusions: { type: "array", items: { type: "string" } }
+            implications: { type: "array", items: { type: "string" } }
+        coherence_score:
+          type: "number"
+          minimum: 0
+          maximum: 1
+        completeness_score:
+          type: "number"
+          minimum: 0
+          maximum: 1
+      required: ["synthesis", "coherence_score"]
+
+  - name: "validate_output"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        output:
+          type: "object"
+          properties:
+            synthesis: { type: "object" }
+            coherence_score: { type: "number" }
+            completeness_score: { type: "number" }
+        validation_criteria:
+          type: "object"
+          properties:
+            min_coherence: { type: "number" }
+            min_completeness: { type: "number" }
+            required_elements: { type: "array", items: { type: "string" } }
+      required: ["output"]
+    output_schema:
+      type: "object"
+      properties:
+        validation_result:
+          type: "object"
+          properties:
+            passed: { type: "boolean" }
+            overall_score: { type: "number" }
+            criteria_scores:
+              type: "object"
+              properties:
+                coherence: { type: "number" }
+                completeness: { type: "number" }
+                accuracy: { type: "number" }
+                clarity: { type: "number" }
+        issues:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              type: { type: "string" }
+              severity: { type: "string" }
+              description: { type: "string" }
+              suggestion: { type: "string" }
+        recommendations:
+          type: "array"
+          items: { type: "string" }
+      required: ["validation_result", "issues"]
+
+  - name: "coordinate_agents"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        task:
+          type: "string"
+          description: "Overall task description"
+        agent_results:
+          type: "object"
+          properties:
+            research: { type: "object" }
+            analysis: { type: "object" }
+            synthesis: { type: "object" }
+            validation: { type: "object" }
+        coordination_strategy:
+          type: "string"
+          enum: ["sequential", "parallel", "iterative"]
+      required: ["task", "agent_results"]
+    output_schema:
+      type: "object"
+      properties:
+        final_output:
+          type: "object"
+          properties:
+            result: { type: "string" }
+            confidence: { type: "number" }
+            sources: { type: "array", items: { type: "string" } }
+            metadata: { type: "object" }
+        execution_summary:
+          type: "object"
+          properties:
+            agents_used: { type: "array", items: { type: "string" } }
+            total_time: { type: "number" }
+            success_rate: { type: "number" }
+            quality_score: { type: "number" }
+        next_steps:
+          type: "array"
+          items: { type: "string" }
+      required: ["final_output", "execution_summary"]
+
+guardrails:
+  determinism:
+    temperature: 0.2
+    seed: "session-hash"
+    canonical_sort: true
+  confidence:
+    threshold: 0.7
+    min_confidence: 0.5
+  fallback:
+    enabled: true
+    policy: "rule_first"
+  ranking:
+    enabled: true
+    reranker: "deterministic"
+  context_alignment:
+    enabled: true
+    threshold: 0.8
+  human_gates:
+    enabled: true
+    approval_required: true
+    approval_threshold: 0.8
+  circuit_breakers:
+    enabled: true
+    failure_threshold: 3
+  policy_engine:
+    enabled: true
+    environment: "development"
+  observability:
+    enabled: true
+    logging_level: "info"
+    metrics_enabled: true
+
+context_schema:
+  type: "object"
+  properties:
+    session_id:
+      type: "string"
+      description: "Unique session identifier"
+    user_id:
+      type: "string"
+      description: "User identifier"
+    task:
+      type: "string"
+      description: "Overall task description"
+    agent_coordination:
+      type: "object"
+      properties:
+        strategy: { type: "string" }
+        current_agent: { type: "string" }
+        completed_agents: { type: "array", items: { type: "string" } }
+    research_results:
+      type: "object"
+      properties:
+        findings: { type: "array" }
+        summary: { type: "string" }
+        confidence: { type: "number" }
+    analysis_results:
+      type: "object"
+      properties:
+        analysis: { type: "object" }
+        metrics: { type: "object" }
+        recommendations: { type: "array" }
+    synthesis_results:
+      type: "object"
+      properties:
+        synthesis: { type: "object" }
+        coherence_score: { type: "number" }
+        completeness_score: { type: "number" }
+    validation_results:
+      type: "object"
+      properties:
+        validation_result: { type: "object" }
+        issues: { type: "array" }
+        recommendations: { type: "array" }
+    final_output:
+      type: "object"
+      properties:
+        result: { type: "string" }
+        confidence: { type: "number" }
+        sources: { type: "array" }
+        metadata: { type: "object" }
+  required: ["session_id", "task"]

@@ -1,0 +1,150 @@
+.dashboard-home {
+  padding: 0;
+}
+
+.dashboard-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dashboard-header-section h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.deployment-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.deployment-selector label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.deployment-selector select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deployment-selector select:hover {
+  border-color: var(--primary-color);
+}
+
+.deployment-selector select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.grid-item {
+  width: 100%;
+}
+
+.grid-item h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.graph-section,
+.slo-section,
+.circuit-breaker-section {
+  background: var(--bg-primary);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.loading,
+.error,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--text-secondary);
+}
+
+.error button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: #ffffff;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.error button:hover {
+  background: #1d4ed8;
+}
+
+.empty-state a {
+  margin-top: 1rem;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.empty-state a:hover {
+  text-decoration: underline;
+}
+
+.graph-section,
+.slo-section,
+.circuit-breaker-section,
+.cost-section,
+.drift-section,
+.gate-section,
+.collaboration-section,
+.realtime-section,
+.performance-section,
+.timeline-section,
+.resource-section,
+.trends-section {
+  background: var(--bg-primary);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .graph-section,
+  .performance-section,
+  .realtime-section {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1536px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+

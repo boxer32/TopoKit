@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  topokit-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: topokit:staging
+    container_name: topokit-staging-api
+    environment:
+      - ENVIRONMENT=staging
+      - DATABASE_URL=postgresql://topokit:${DB_PASSWORD}@postgres:5432/topokit_staging
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENABLE_METRICS=true
+      - LOG_LEVEL=INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: topokit-staging-db
+    environment:
+      - POSTGRES_USER=topokit
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=topokit_staging
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U topokit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: topokit-staging-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  default:
+    name: topokit-staging
+

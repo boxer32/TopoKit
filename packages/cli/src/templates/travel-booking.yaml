@@ -1,0 +1,498 @@
+# TopoKit Travel Booking System Template
+# This template demonstrates a travel booking system with multi-agent coordination,
+# external API integration, and state management
+
+name: "travel-booking"
+description: "Travel booking system with search, booking, and payment agents"
+version: "1.0.0"
+
+nodes:
+  - id: "Search.Flights"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["search_flights"]
+      context_required: true
+    execution_profile:
+      temperature: 0.1
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 1500
+      deterministic_reranker: true
+    metadata:
+      adapter: "openai"
+      model: "gpt-4-turbo-preview"
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 8%"
+      latency_budget: "≤ 2000ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 95%"
+      cost_budget: "≤ 150 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 3000
+      fallback_node: "Search.Flights.Fallback"
+    caching:
+      enabled: true
+      ttl_seconds: 1800
+      key_template: "route_hash+date_hash+search_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: false
+
+  - id: "Search.Hotels"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["search_hotels"]
+      context_required: true
+    execution_profile:
+      temperature: 0.1
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 1500
+      deterministic_reranker: true
+    metadata:
+      adapter: "openai"
+      model: "gpt-4-turbo-preview"
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 8%"
+      latency_budget: "≤ 2000ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 95%"
+      cost_budget: "≤ 150 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 3000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 1800
+      key_template: "location_hash+date_hash+hotel_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: false
+
+  - id: "Booking.Coordinator"
+    kind: "ops"
+    version: "1.0.0"
+    scope:
+      contracts: ["coordinate_booking"]
+      context_required: true
+    execution_profile:
+      temperature: 0.0
+      top_p: 1.0
+      seed: "stable"
+      max_tokens: 2000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 5%"
+      latency_budget: "≤ 3000ms"
+      context_precision: "≥ 0.95"
+      consistency_rate: "≥ 98%"
+      cost_budget: "≤ 50 tokens/run"
+    circuit_breaker:
+      failure_threshold: 2
+      timeout_ms: 4000
+      fallback_node: null
+    caching:
+      enabled: false
+      ttl_seconds: 0
+      key_template: ""
+    provenance:
+      track_prompt_hash: false
+      track_model_params: false
+      track_retrieval_sources: false
+
+  - id: "Payment.Processor"
+    kind: "ops"
+    version: "1.0.0"
+    scope:
+      contracts: ["process_payment"]
+      context_required: true
+    execution_profile:
+      temperature: 0.0
+      top_p: 1.0
+      seed: "stable"
+      max_tokens: 1000
+      deterministic_reranker: false
+    slos:
+      schema_pass_rate: "≥ 99.9%"
+      drift_threshold: "≤ 2%"
+      latency_budget: "≤ 5000ms"
+      context_precision: "≥ 0.99"
+      consistency_rate: "≥ 99%"
+      cost_budget: "≤ 25 tokens/run"
+    circuit_breaker:
+      failure_threshold: 2
+      timeout_ms: 6000
+      fallback_node: null
+    caching:
+      enabled: false
+      ttl_seconds: 0
+      key_template: ""
+    provenance:
+      track_prompt_hash: true
+      track_model_params: false
+      track_retrieval_sources: false
+
+  - id: "Confirmation.Generator"
+    kind: "ai"
+    version: "1.0.0"
+    scope:
+      contracts: ["generate_confirmation"]
+      context_required: true
+    execution_profile:
+      temperature: 0.2
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 1000
+      deterministic_reranker: true
+    metadata:
+      adapter: "openai"
+      model: "gpt-3.5-turbo"
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 10%"
+      latency_budget: "≤ 2000ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 95%"
+      cost_budget: "≤ 100 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 3000
+      fallback_node: null
+    caching:
+      enabled: true
+      ttl_seconds: 3600
+      key_template: "booking_hash+confirmation_version"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: false
+
+edges:
+  - id: "Search.Flights_to_Booking.Coordinator"
+    from: "Search.Flights"
+    to: "Booking.Coordinator"
+    version: "1.0.0"
+    contracts: ["search_flights", "coordinate_booking"]
+    allow: true
+    timeout_ms: 4000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 3000
+
+  - id: "Search.Hotels_to_Booking.Coordinator"
+    from: "Search.Hotels"
+    to: "Booking.Coordinator"
+    version: "1.0.0"
+    contracts: ["search_hotels", "coordinate_booking"]
+    allow: true
+    timeout_ms: 4000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 3000
+
+  - id: "Booking.Coordinator_to_Payment.Processor"
+    from: "Booking.Coordinator"
+    to: "Payment.Processor"
+    version: "1.0.0"
+    contracts: ["coordinate_booking", "process_payment"]
+    allow: true
+    timeout_ms: 6000
+    max_retries: 2
+    circuit_breaker:
+      failure_threshold: 2
+      timeout_ms: 5000
+
+  - id: "Payment.Processor_to_Confirmation.Generator"
+    from: "Payment.Processor"
+    to: "Confirmation.Generator"
+    version: "1.0.0"
+    contracts: ["process_payment", "generate_confirmation"]
+    allow: true
+    timeout_ms: 3000
+    max_retries: 1
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 2000
+
+contracts:
+  - name: "search_flights"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        origin:
+          type: "string"
+          description: "Origin airport code"
+        destination:
+          type: "string"
+          description: "Destination airport code"
+        departure_date:
+          type: "string"
+          format: "date"
+          description: "Departure date"
+        return_date:
+          type: "string"
+          format: "date"
+          description: "Return date (optional)"
+        passengers:
+          type: "object"
+          properties:
+            adults: { type: "number", minimum: 1 }
+            children: { type: "number", minimum: 0, default: 0 }
+            infants: { type: "number", minimum: 0, default: 0 }
+          required: ["adults"]
+        class:
+          type: "string"
+          enum: ["economy", "business", "first"]
+          default: "economy"
+      required: ["origin", "destination", "departure_date"]
+    output_schema:
+      type: "object"
+      properties:
+        flights:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              flight_number: { type: "string" }
+              airline: { type: "string" }
+              departure_time: { type: "string" }
+              arrival_time: { type: "string" }
+              price: { type: "number" }
+              currency: { type: "string" }
+              available_seats: { type: "number" }
+        total_options: { type: "number" }
+      required: ["flights", "total_options"]
+
+  - name: "search_hotels"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        location:
+          type: "string"
+          description: "Hotel location (city or coordinates)"
+        check_in:
+          type: "string"
+          format: "date"
+          description: "Check-in date"
+        check_out:
+          type: "string"
+          format: "date"
+          description: "Check-out date"
+        guests:
+          type: "object"
+          properties:
+            adults: { type: "number", minimum: 1 }
+            children: { type: "number", minimum: 0, default: 0 }
+          required: ["adults"]
+        preferences:
+          type: "object"
+          properties:
+            price_range: { type: "object" }
+            rating: { type: "number", minimum: 1, maximum: 5 }
+            amenities: { type: "array", items: { type: "string" } }
+      required: ["location", "check_in", "check_out"]
+    output_schema:
+      type: "object"
+      properties:
+        hotels:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              name: { type: "string" }
+              address: { type: "string" }
+              rating: { type: "number" }
+              price_per_night: { type: "number" }
+              currency: { type: "string" }
+              available_rooms: { type: "number" }
+              amenities: { type: "array", items: { type: "string" } }
+        total_options: { type: "number" }
+      required: ["hotels", "total_options"]
+
+  - name: "coordinate_booking"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        flight_selection:
+          type: "object"
+          properties:
+            flights: { type: "array" }
+            total_options: { type: "number" }
+        hotel_selection:
+          type: "object"
+          properties:
+            hotels: { type: "array" }
+            total_options: { type: "number" }
+        user_preferences:
+          type: "object"
+          properties:
+            price_preference: { type: "string", enum: ["low", "medium", "high"] }
+            time_preference: { type: "string" }
+      required: ["flight_selection", "hotel_selection"]
+    output_schema:
+      type: "object"
+      properties:
+        booking_summary:
+          type: "object"
+          properties:
+            selected_flight: { type: "object" }
+            selected_hotel: { type: "object" }
+            total_price: { type: "number" }
+            currency: { type: "string" }
+        booking_id: { type: "string" }
+        reservation_details: { type: "object" }
+      required: ["booking_summary", "booking_id"]
+
+  - name: "process_payment"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        booking_id:
+          type: "string"
+          description: "Booking identifier"
+        payment_method:
+          type: "object"
+          properties:
+            type: { type: "string", enum: ["credit_card", "debit_card", "paypal"] }
+            details: { type: "object" }
+          required: ["type"]
+        amount:
+          type: "object"
+          properties:
+            value: { type: "number", minimum: 0 }
+            currency: { type: "string" }
+          required: ["value", "currency"]
+      required: ["booking_id", "payment_method", "amount"]
+    output_schema:
+      type: "object"
+      properties:
+        payment_status:
+          type: "string"
+          enum: ["pending", "processing", "completed", "failed"]
+        transaction_id: { type: "string" }
+        payment_details:
+          type: "object"
+          properties:
+            amount: { type: "object" }
+            method: { type: "string" }
+            processed_at: { type: "string", format: "date-time" }
+      required: ["payment_status", "transaction_id"]
+
+  - name: "generate_confirmation"
+    version: "1.0.0"
+    input_schema:
+      type: "object"
+      properties:
+        booking_id: { type: "string" }
+        payment_status: { type: "string" }
+        transaction_id: { type: "string" }
+        booking_summary: { type: "object" }
+      required: ["booking_id", "payment_status", "transaction_id"]
+    output_schema:
+      type: "object"
+      properties:
+        confirmation:
+          type: "object"
+          properties:
+            confirmation_number: { type: "string" }
+            booking_details: { type: "object" }
+            payment_confirmation: { type: "object" }
+            travel_instructions: { type: "string" }
+            cancellation_policy: { type: "string" }
+        email_sent: { type: "boolean" }
+        confirmation_id: { type: "string" }
+      required: ["confirmation", "confirmation_id"]
+
+guardrails:
+  determinism:
+    temperature: 0.1
+    seed: "session-hash"
+    canonical_sort: true
+  confidence:
+    threshold: 0.8
+    min_confidence: 0.6
+  fallback:
+    enabled: true
+    policy: "rule_first"
+  ranking:
+    enabled: true
+    reranker: "deterministic"
+  context_alignment:
+    enabled: true
+    threshold: 0.85
+  human_gates:
+    enabled: true
+    approval_required: true
+    approval_threshold: 0.9
+    required_for:
+      - "Payment.Processor"
+  circuit_breakers:
+    enabled: true
+    failure_threshold: 3
+  policy_engine:
+    enabled: true
+    environment: "production"
+  observability:
+    enabled: true
+    logging_level: "info"
+    metrics_enabled: true
+
+context_schema:
+  type: "object"
+  properties:
+    session_id:
+      type: "string"
+      description: "Unique session identifier"
+    user_id:
+      type: "string"
+      description: "User identifier"
+    travel_request:
+      type: "object"
+      properties:
+        origin: { type: "string" }
+        destination: { type: "string" }
+        dates: { type: "object" }
+        passengers: { type: "object" }
+    flight_search_results:
+      type: "object"
+      properties:
+        flights: { type: "array" }
+        total_options: { type: "number" }
+    hotel_search_results:
+      type: "object"
+      properties:
+        hotels: { type: "array" }
+        total_options: { type: "number" }
+    booking_summary:
+      type: "object"
+      properties:
+        selected_flight: { type: "object" }
+        selected_hotel: { type: "object" }
+        total_price: { type: "number" }
+        currency: { type: "string" }
+    payment_status:
+      type: "string"
+      enum: ["pending", "processing", "completed", "failed"]
+    confirmation:
+      type: "object"
+      properties:
+        confirmation_number: { type: "string" }
+        booking_details: { type: "object" }
+        payment_confirmation: { type: "object" }
+  required: ["session_id", "travel_request"]
+

@@ -1,0 +1,57 @@
+determinism:
+  temperature: 0.2
+  seed: "session-hash"
+  canonical_sort: true
+
+confidence:
+  threshold: 0.6
+
+fallback:
+  enabled: true
+  policy: rule_first
+
+ranking:
+  tie_break_key: "hash(package_id+season+budget_bin)"
+
+context_alignment:
+  similarity_threshold: 0.9
+  rerank_enabled: true
+  precision_target: 0.95
+  ir_metrics: [MRR, nDCG]
+  embedding_model: "text-embedding-3-large"
+  rerank_model: "ms-marco-MiniLM-L-12-v2"
+
+human_gates:
+  high_risk_actions: true
+  confidence_threshold: 0.8
+  manual_approval_required: ["AI.Explain", "AI.Rank"]
+  approval_timeout_ms: 300000
+
+circuit_breakers:
+  failure_threshold: 5
+  timeout_ms: 10000
+  recovery_timeout_ms: 30000
+  fallback_strategy: "cached_response"
+
+policy_engine:
+  enabled: true
+  policy_files: ["policies/pii.rego", "policies/safety.rego", "policies/schema.rego"]
+  enforcement_mode: "strict"
+  rbac:
+    enabled: true
+    roles: ["admin", "developer", "viewer"]
+    permissions:
+      admin: ["read", "write", "execute", "approve"]
+      developer: ["read", "write", "execute"]
+      viewer: ["read"]
+
+observability:
+  trace: true
+  redact_pii: true
+  drift_monitoring: true
+  real_time_dashboard: true
+  audit_log:
+    enabled: true
+    tamper_evident: true
+    retention_days: 90
+    encryption: true

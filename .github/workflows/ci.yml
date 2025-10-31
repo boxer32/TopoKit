@@ -1,0 +1,326 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8'
+
+jobs:
+  python-tests:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e packages/core/
+        pip install pytest pytest-cov
+        
+    - name: Run Python tests
+      run: |
+        cd packages/core
+        python -m pytest tests/ -v --cov=topokit --cov-report=xml --cov-report=html
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: packages/core/coverage.xml
+        flags: python
+        name: python-coverage
+
+  typescript-tests:
+    name: TypeScript Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        
+    - name: Setup pnpm cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+          
+    - name: Install dependencies
+      run: |
+        cd packages/cli
+        pnpm install --frozen-lockfile
+        
+    - name: Build TypeScript
+      run: |
+        cd packages/cli
+        pnpm run build
+        
+    - name: Run TypeScript tests
+      run: |
+        cd packages/cli
+        pnpm test
+
+  lint-and-format:
+    name: Lint and Format
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e packages/core/
+        pip install black isort flake8 mypy
+        
+    - name: Install Node.js dependencies
+      run: |
+        cd packages/cli
+        pnpm install --frozen-lockfile
+        
+    - name: Python linting
+      run: |
+        cd packages/core
+        flake8 topokit/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 topokit/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        black --check topokit/ tests/
+        isort --check-only topokit/ tests/
+        mypy topokit/ --ignore-missing-imports
+        
+    - name: TypeScript linting
+      run: |
+        cd packages/cli
+        pnpm run lint
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+        
+    - name: Install Node.js dependencies
+      run: |
+        cd packages/cli
+        pnpm install --frozen-lockfile
+        
+    - name: Python security scan
+      run: |
+        cd packages/core
+        safety check
+        bandit -r topokit/ -f json -o bandit-report.json || true
+        
+    - name: Node.js security scan
+      run: |
+        cd packages/cli
+        pnpm audit --audit-level moderate
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [python-tests, typescript-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e packages/core/
+        
+    - name: Install Node.js dependencies
+      run: |
+        cd packages/cli
+        pnpm install --frozen-lockfile
+        pnpm run build
+        
+    - name: Test CLI with Python core
+      run: |
+        # Test that CLI can work with Python core
+        cd packages/cli
+        node dist/index.js init --template rag-system --output /tmp/test-integration
+        
+        # Test linting
+        cd /tmp/test-integration
+        node /Users/test/Desktop/Topokit/packages/cli/dist/index.js lint
+        
+        # Test graph generation
+        node /Users/test/Desktop/Topokit/packages/cli/dist/index.js graph
+
+  build-and-publish:
+    name: Build and Publish
+    runs-on: ubuntu-latest
+    needs: [python-tests, typescript-tests, lint-and-format, security-scan, integration-tests]
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+        cd packages/cli
+        pnpm install --frozen-lockfile
+        pnpm run build
+        
+    - name: Build Python package
+      run: |
+        cd packages/core
+        python -m build
+        
+    - name: Build Node.js package
+      run: |
+        cd packages/cli
+        pnpm pack
+        
+    - name: Publish to PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        cd packages/core
+        python -m twine upload dist/*
+        
+    - name: Publish to npm
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        cd packages/cli
+        npm publish
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [python-tests, typescript-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: |
+          topokit/topokit:latest
+          topokit/topokit:${{ github.sha }}
+        platforms: linux/amd64,linux/arm64

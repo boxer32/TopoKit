@@ -1,0 +1,100 @@
+nodes:
+  - id: UX.Intent
+    kind: ux
+    version: "1.2.0"
+    scope:
+      contracts: [classify, explain]
+      context_required: true
+    execution_profile:
+      temperature: 0.1
+      top_p: 0.8
+      seed: "stable"
+      max_tokens: 1000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 10%"
+      latency_budget: "≤ 1000ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 95%"
+      cost_budget: "≤ 100 tokens/run"
+    circuit_breaker:
+      failure_threshold: 3
+      timeout_ms: 2000
+      fallback_node: "UX.Intent.Fallback"
+    caching:
+      enabled: true
+      ttl_seconds: 3600
+      key_template: "prompt_hash+ctx_hash+model+profile"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+
+  - id: AI.Rank
+    kind: ai
+    version: "2.1.0"
+    scope:
+      contracts: [rank]
+      retrieval_scope: ["vec:packages", "graph:places"]
+      context_required: true
+    execution_profile:
+      temperature: 0.2
+      top_p: 0.9
+      seed: "stable"
+      max_tokens: 2000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 5%"
+      latency_budget: "≤ 2000ms"
+      context_precision: "≥ 0.95"
+      consistency_rate: "≥ 98%"
+      ranking_stability: "≤ 0.5%"
+      cost_budget: "≤ 200 tokens/run"
+    circuit_breaker:
+      failure_threshold: 5
+      timeout_ms: 4000
+      fallback_node: "AI.Rank.Fallback"
+    caching:
+      enabled: true
+      ttl_seconds: 1800
+      key_template: "query_hash+context_hash+model+profile"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+      track_ranking_rationale: true
+
+  - id: AI.Explain
+    kind: ai
+    version: "1.5.0"
+    scope:
+      contracts: [explain]
+      context_required: true
+    execution_profile:
+      temperature: 0.3
+      top_p: 0.85
+      seed: "stable"
+      max_tokens: 3000
+      deterministic_reranker: true
+    slos:
+      schema_pass_rate: "≥ 99%"
+      drift_threshold: "≤ 8%"
+      latency_budget: "≤ 3000ms"
+      context_precision: "≥ 0.9"
+      consistency_rate: "≥ 92%"
+      cost_budget: "≤ 300 tokens/run"
+    circuit_breaker:
+      failure_threshold: 4
+      timeout_ms: 5000
+      fallback_node: "AI.Explain.Fallback"
+    caching:
+      enabled: true
+      ttl_seconds: 7200
+      key_template: "explain_hash+context_hash+model+profile"
+    provenance:
+      track_prompt_hash: true
+      track_model_params: true
+      track_retrieval_sources: true
+      track_explanation_rationale: true
